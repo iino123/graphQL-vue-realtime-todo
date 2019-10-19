@@ -51,6 +51,13 @@
       }
     }
   `
+  const REMOVE_TODO = gql`
+   mutation delete_todos($id: Int!) {
+     delete_todos(where: { id: { _eq: $id } }) {
+       affected_rows
+     }
+   }
+ `;
   export default {
     props: ['todos', 'type'],
     methods: {
@@ -101,6 +108,28 @@
       },
       handleTodoDelete: function(todo) { // eslint-disable-line
         // delete todo from db
+        this.$apollo.mutate({
+          mutation: REMOVE_TODO,
+          variables: {
+            id: todo.id
+          },
+          update: (store, { data: {delete_todos } }) => {
+            if (delete_todos.affected_rows) {
+              if (this.type === "private") {
+                const data = store.readQuery({
+                  query: GET_MY_TODOS
+                });
+                data.todos = data.todos.filter(t => {
+                  return t.id != todo.id
+                })
+                store.writeQuery({
+                  query: GET_MY_TODOS,
+                  data
+                })
+              }
+            }
+          }
+        })
       }
     }
   }
