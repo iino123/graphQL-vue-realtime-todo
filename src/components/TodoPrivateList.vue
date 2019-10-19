@@ -73,6 +73,31 @@ export default {
       const isOk = window.confirm("Are you sure?");
       if (isOk) {
         // Remove all the todos that are completed
+        const CLEAR_COMPLETED = gql`
+          mutation clearCompleted {
+            delete_todos(where: {is_completed: {_eq: true}, is_public: {_eq: false}}) {
+              affected_rows
+            }
+          }
+        `;
+        this.$apollo
+          .mutate({
+            mutation: CLEAR_COMPLETED,
+            update: (cache, { data: { delete_todos } }) => {
+              if (delete_todos.affected_rows) {
+                const data = cache.readQuery({
+                  query: GET_MY_TODOS,
+                });
+                data.todos = data.todos.filter((todo) => todo.is_completed !== true);
+                cache.writeQuery({
+                  query: GET_MY_TODOS,
+                })
+              }
+            }
+          })
+          .catch(error => {
+            console.error(error)
+          })
       }
     }
   },
