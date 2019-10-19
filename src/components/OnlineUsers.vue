@@ -15,6 +15,7 @@
 </template>
 
 <script>
+  import gql from 'graphql-tag'
   export default {
     data() {
       return {
@@ -24,6 +25,27 @@
         ]
       };
     },
+    mounted() {
+      const UPDATE_LASTSEEN_MUTATION = gql`
+        mutation updateLastSeen ($now" timestamptz!) {
+          update_users(where: {}, set: {last_seen: $now}) {
+            affected_rows
+          }
+        }
+      `
+      setInterval(function(){
+        this.$apollo
+          .mutate({
+            mutation: UPDATE_LASTSEEN_MUTATION,
+            variables: {
+              now: new Date().toISOString()
+            }
+          })
+          .catch(error => {
+            console.error(error)
+          })
+      }.bind(this), 30000)
+    }
   }
 
 </script>
