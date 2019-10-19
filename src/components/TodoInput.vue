@@ -11,6 +11,22 @@
 </template>
 
 <script>
+  import gql from "graphql-tag";
+  import { GET_MY_TODOS } from "./TodoPrivateList.vue";
+  const ADD_TODO = gql`
+    mutation insert_todos($todo: String!, $isPublic: Boolean!) {
+      insert_todos(objects: {title: $todo, is_public: $isPublic}) {
+        affected_rows
+        returning {
+          id
+          title
+          is_completed
+          created_at
+          is_public
+        }
+      }
+    }
+  `;
   export default {
     props: ['type'],
     data() {
@@ -20,7 +36,38 @@
     },
     methods: {
       addTodo: function () {
-        // insert new todo into db
+        const title = this.newTodo && this.newTodo.trim()
+        const isPublic = this.type === "public" ? true : false;
+        this.$apollo.mutate({
+          mutation: ADD_TODO,
+          variables: {
+            todo: title,
+            isPublic: isPublic
+          },
+          update: (cache, { data: { insert_todos } }) => {
+            // cache => cache
+            // data => mutationの結果
+            try {
+              if (this.type === "private") {
+                // readQueryを使うとサーバにデータを送信しない
+                const data = cache.readQuery({
+                  query: GET_MY_TODOS
+                });
+                const insertedTodo = insert_todos.returning;
+                data.todos.splice(0, 0, insertedTodo[0]);
+                // UIを更新する為にローカルキャッシュの値を変更する(サーバには値は送信されない)
+                cache.writeQuery({
+                  query: GET_MY_TODOS,
+                  data
+                });
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          },
+        });
+        // 入力部分のUIをリセットする
+        this.newTodo = '';
       },
     }
   }
