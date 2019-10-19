@@ -50,6 +50,23 @@ const GET_OLD_PUBLIC_TODOS = gql`
     }
   }
 `;
+const GET_NEW_PUBLIC_TODOS = gql`
+  query getNewPublicTodo($latestVisibleId: Int!) {
+    todos(
+      where: { is_public: {_eq: true}, id: {_gt: $latestVisibleId} }
+      order_by: { created_at: desc }
+    )
+    {
+      id
+      title
+      created_at
+      is_public
+      user {
+        name
+      }
+    }
+  }
+`
 export default {
   components: {
     TodoItem, TodoFilters
@@ -93,6 +110,20 @@ export default {
   },
   methods: {
     loadMoreClicked: function() {
+      this.newTodosCount = 0;
+      this.$apollo
+        .query({
+          query: GET_NEW_PUBLIC_TODOS,
+          variables: {
+            latestVisibleId: this.todos.length ? this.todos[0].id : null
+          }
+        })
+        .then(data => {
+          if (data.data.todos.length) {
+            const mergedTodos = data.data.todos.concat(this.todos)
+            this.todos = mergedTodos
+          }
+        })
     },
     loadOlderClicked: function() {
       this.$apollo
