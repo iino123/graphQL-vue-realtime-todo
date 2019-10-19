@@ -44,6 +44,9 @@
             todo: title,
             isPublic: isPublic
           },
+          // UIを更新する為に再びapiをコールする必要はない
+          // ADD_TODOの返り値にADD_TODOしたもの自体が返るようにしておいて、その値をキャッシュに書き込む。
+          // 今回はGET_MY_TODOSによるUIを更新したい。
           update: (cache, { data: { insert_todos } }) => {
             // cache => cache
             // data => mutationの結果

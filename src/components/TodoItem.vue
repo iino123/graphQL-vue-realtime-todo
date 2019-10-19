@@ -86,6 +86,8 @@
               }
             }
           },
+          // 楽観的なupdate(レスポンスが返ってくる前にUIを更新する。)
+          // レスポンスが返ってきたらさらに自動で更新をかけてくれる。
           optimisticResponse: {
             __typename: 'Mutation',
             update_todos: {
